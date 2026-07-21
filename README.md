@@ -45,7 +45,9 @@ telemetry, fleet metrics, failure classification, MCAP capture, process cleanup,
 live replay verification. Three same-seed Office runs completed successfully with equivalent outcomes.
 
 Search algorithms remain intentionally unimplemented; this milestone covers only the live vertical
-slice.
+slice. The implementation contract for adversarial evolution, behavioral novelty, quality-diversity
+search, benchmarking, and eventual defender coevolution is documented in
+[docs/evolutionary_search_spec.md](docs/evolutionary_search_spec.md).
 
 See [docs/live_validation_report.md](docs/live_validation_report.md),
 [docs/rmf_interface_inspection.md](docs/rmf_interface_inspection.md), and
