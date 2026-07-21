@@ -1,0 +1,23 @@
+services:
+  aft:
+    image: adversarial-fleet-testing:live
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        RMF_DEMOS_IMAGE: ${RMF_DEMOS_IMAGE:-ghcr.io/open-rmf/rmf/rmf_demos@sha256:a6ed4f30b6f86833b54037aa5ce3535a078ea304de776b0d6b5ddb01b1e94478}
+    network_mode: host
+    init: true
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
+      AFT_RMF_IMAGE: ${RMF_DEMOS_IMAGE:-ghcr.io/open-rmf/rmf/rmf_demos@sha256:a6ed4f30b6f86833b54037aa5ce3535a078ea304de776b0d6b5ddb01b1e94478}
+    volumes:
+      - ../configs:/opt/adversarial-fleet-testing/configs:ro
+      - ../results:/opt/adversarial-fleet-testing/results
+      - aft-gz-cache:/root/.gz/fuel
+    command: ["health-check", "--config", "configs/default.yaml"]
+
+volumes:
+  aft-gz-cache:
+    name: aft-gz-cache
+    external: true

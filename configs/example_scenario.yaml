@@ -1,0 +1,21 @@
+seed: 1042
+fleet:
+  robot_count: 2
+  max_speed_multiplier: 1.0
+  acceleration_multiplier: 1.0
+tasks:
+  task_count: 4
+  arrival_interval_seconds: 8.0
+  priority_skew: 0.0
+  patrol_routes:
+    - [coe, lounge]
+    - [supplies, pantry]
+facility:
+  blocked_lane_id: null
+  door_delay_seconds: 0.0
+  charger_count: 2
+faults:
+  failed_robot_id: null
+  failure_time_seconds: null
+  state_update_latency_ms: 0
+

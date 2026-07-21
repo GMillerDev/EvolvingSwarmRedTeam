@@ -1,0 +1,30 @@
+project:
+  name: adversarial-fleet-testing
+  output_dir: ./results
+simulation:
+  adapter: rmf_demo
+  world: office
+  mission_timeout_seconds: 300
+  startup_timeout_seconds: 300
+  startup_attempt_timeout_seconds: 90
+  startup_max_attempts: 3
+  poll_interval_seconds: 1.0
+  deterministic: true
+  ros_domain_id: 0
+  ros_setup_script: /opt/ros/kilted/setup.bash
+  workspace_setup_script: /rmf_demos_ws/install/setup.bash
+recording:
+  enable_rosbag: true
+  enable_video: false
+  record_stdout: true
+  record_stderr: true
+failure_detection:
+  deadlock: true
+  starvation: true
+  recovery_loop: false
+  deadlock_minimum_robots: 2
+  deadlock_movement_threshold_meters: 0.10
+  deadlock_observation_window_seconds: 15
+  deadlock_timeout_seconds: 30
+  starvation_threshold_seconds: 120
+  starvation_minimum_newer_tasks_completed: 2

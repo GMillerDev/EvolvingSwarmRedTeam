@@ -1,0 +1,17 @@
+normalization:
+  p95_task_latency: 300.0
+  deadlock_duration: 120.0
+  task_starvation_count: 10.0
+  negotiation_failure_count: 10.0
+  recovery_loop_count: 10.0
+  blocked_time_total: 600.0
+weights:
+  incomplete_task_ratio: 3.0
+  p95_task_latency: 2.0
+  deadlock_duration: 3.0
+  task_starvation_count: 2.0
+  negotiation_failure_count: 1.5
+  recovery_loop_count: 1.5
+  blocked_time_total: 1.0
+  fleet_fragmentation_score: 1.0
+
