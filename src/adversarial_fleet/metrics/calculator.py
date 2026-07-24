@@ -110,7 +110,7 @@ def calculate_metrics(
     return metrics
 
 
-def calculate_fitness(
+def calculate_severity(
     metrics: dict[str, float],
     *,
     scales: dict[str, float] | None = None,
@@ -127,4 +127,23 @@ def calculate_fitness(
         "fleet_fragmentation_score": clamp(metrics.get("fleet_fragmentation_score", 0.0)),
     }
     raw_score = sum(WEIGHTS[name] * value for name, value in components.items())
-    return {"score": clamp(raw_score, 0.0, 10.0), "raw_score": raw_score, "components": components}
+    return {
+        "severity_score": clamp(raw_score, 0.0, 10.0),
+        "raw_severity_score": raw_score,
+        "components": components,
+    }
+
+
+def calculate_fitness(
+    metrics: dict[str, float],
+    *,
+    scales: dict[str, float] | None = None,
+) -> dict[str, Any]:
+    """Return the legacy run-artifact representation of the severity calculation."""
+
+    severity = calculate_severity(metrics, scales=scales)
+    return {
+        "score": severity["severity_score"],
+        "raw_score": severity["raw_severity_score"],
+        "components": severity["components"],
+    }

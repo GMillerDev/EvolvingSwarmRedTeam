@@ -1,0 +1,13 @@
+from __future__ import annotations
+
+from typing import Any, Protocol
+
+from ..evaluation import AggregateEvaluation
+from ..models import AdversarialGenome
+
+
+class SearchAlgorithm(Protocol):
+    def ask(self, count: int) -> list[AdversarialGenome]: ...
+    def tell(self, evaluations: list[AggregateEvaluation]) -> None: ...
+    def state_dict(self) -> dict[str, Any]: ...
+    def load_state_dict(self, state: dict[str, Any]) -> None: ...

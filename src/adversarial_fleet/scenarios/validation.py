@@ -1,27 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
+from .capabilities import ScenarioCapabilities
 from .genome import ScenarioGenome
-
-
-OFFICE_WAYPOINTS = frozenset({"coe", "lounge", "supplies", "pantry", "hardware_2"})
-OFFICE_ROBOTS = frozenset({"tinyRobot1", "tinyRobot2"})
-
-
-@dataclass(frozen=True)
-class ScenarioCapabilities:
-    world: str = "office"
-    supported_robot_count: int = 2
-    waypoints: frozenset[str] = OFFICE_WAYPOINTS
-    robot_ids: frozenset[str] = OFFICE_ROBOTS
-    lane_ids: frozenset[str] = field(default_factory=frozenset)
-    supports_speed_multiplier: bool = False
-    supports_acceleration_multiplier: bool = False
-    supports_lane_closure: bool = False
-    supports_door_delay: bool = False
-    supports_robot_failure: bool = False
-    supports_state_update_latency: bool = False
 
 
 @dataclass(frozen=True)
@@ -61,6 +43,11 @@ def validate_scenario(
             errors.append("lane closure is not verified for this adapter")
     if scenario.facility.door_delay_seconds != 0 and not capabilities.supports_door_delay:
         errors.append("door_delay_seconds mutation is not verified for this adapter")
+    if (
+        scenario.facility.charger_count != capabilities.default_charger_count
+        and not capabilities.supports_charger_count
+    ):
+        errors.append("charger_count mutation is not verified for this adapter")
     if scenario.faults.failed_robot_id is not None:
         if scenario.faults.failed_robot_id not in capabilities.robot_ids:
             errors.append("failed_robot_id does not identify a verified Office robot")
@@ -69,4 +56,3 @@ def validate_scenario(
     if scenario.faults.state_update_latency_ms != 0 and not capabilities.supports_state_update_latency:
         errors.append("state_update_latency_ms mutation is not verified for this adapter")
     return ValidationResult(not errors, tuple(errors))
-

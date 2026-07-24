@@ -5,6 +5,24 @@ Version: 0.1
 Target repository version: `adversarial-fleet-testing` 0.1.0  
 Primary live environment: Open-RMF Office on ROS 2 Kilted and Gazebo Ionic
 
+Implementation status as of 2026-07-23:
+
+- Phase 0 implemented: charger-count no-op rejection, versioned capability
+  serialization/hashing, seed-free adversarial genotype, explicit realization and
+  phenotype identities, and search-facing severity terminology.
+- Phase 1 enabling subset implemented: typed search configuration, deterministic
+  sampling and variation, ask/tell interfaces, deterministic fake evaluation, JSONL
+  result storage, and atomic checkpoint/resume. The live evaluator, cache, and search
+  CLI remain pending.
+- Phase 2 implemented: behavior descriptors and distance, population/archive novelty,
+  reproducibility and robust-severity aggregation, complexity, screening/confirmation,
+  severity-only GA, and behavior-space fitness-sharing GA.
+- Phase 3 implemented: feasibility-constrained NSGA-II with explicit novelty and
+  objective-space crowding, MAP-Elites behavioral niches, deterministic archive
+  persistence/reporting, duplicate-phenotype safeguards, and elite replay
+  verification hooks.
+- Phases 4-6 remain pending.
+
 ## 1. Purpose
 
 This specification defines the next implementation phase of the adversarial fleet
@@ -916,4 +934,3 @@ The following values are initial defaults, not scientific conclusions:
 
 They shall be configuration values and shall be included in every search and benchmark
 artifact. Changes to them invalidate direct comparisons unless the benchmark is rerun.
-

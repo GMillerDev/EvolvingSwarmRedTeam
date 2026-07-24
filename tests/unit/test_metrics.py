@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from adversarial_fleet.metrics import calculate_fitness, calculate_metrics
+from adversarial_fleet.metrics import calculate_fitness, calculate_metrics, calculate_severity
 
 
 def test_metrics_and_fitness() -> None:
@@ -19,6 +19,10 @@ def test_metrics_and_fitness() -> None:
     assert metrics["blocked_time_total"] == 11.0
     fitness = calculate_fitness(metrics)
     assert fitness["score"] == pytest.approx(1.6516666667)
+    severity = calculate_severity(metrics)
+    assert severity["severity_score"] == fitness["score"]
+    assert severity["raw_severity_score"] == fitness["raw_score"]
+    assert severity["components"] == fitness["components"]
 
 
 def test_fitness_is_clamped() -> None:
@@ -33,4 +37,3 @@ def test_fitness_is_clamped() -> None:
         "fleet_fragmentation_score": 1,
     }
     assert calculate_fitness(metrics)["score"] == 10.0
-

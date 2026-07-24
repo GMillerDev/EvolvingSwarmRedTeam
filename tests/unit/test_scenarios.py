@@ -60,3 +60,10 @@ def test_rejects_unknown_waypoint() -> None:
     assert not result.valid
     assert any("not_a_real_place" in error for error in result.errors)
 
+
+def test_rejects_unverified_charger_count_mutation() -> None:
+    scenario = valid_scenario().model_copy(deep=True)
+    scenario.facility.charger_count = 1
+    result = validate_scenario(scenario)
+    assert not result.valid
+    assert any("charger_count" in error for error in result.errors)
