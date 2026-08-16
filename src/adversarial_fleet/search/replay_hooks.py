@@ -36,9 +36,13 @@ def verify_elite_replays(
     *,
     verifier: ReplayVerificationAdapter,
     verify_all_realizations: bool = False,
+    maximum_elites: int | None = None,
 ) -> EliteReplayVerificationReport:
     results: list[EliteReplayResult] = []
-    for niche, elite in sorted(archive.elites.items()):
+    selected_elites = sorted(archive.elites.items())
+    if maximum_elites is not None:
+        selected_elites = selected_elites[:maximum_elites]
+    for niche, elite in selected_elites:
         references = tuple(
             dict.fromkeys(run.run_path for run in elite.runs if run.run_path is not None)
         )

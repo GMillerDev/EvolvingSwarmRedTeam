@@ -44,11 +44,13 @@ def calculate_complexity(genome: AdversarialGenome, bounds: GenomeBounds) -> flo
     workload = genome.workload
     total_waypoints = sum(len(route) for route in workload.patrol_routes)
     maximum_total_waypoints = bounds.route_count_max * bounds.route_length_max
+    facility_event_count = float(genome.facility is not None)
     return min(
         1.0,
         0.50 * workload.task_count / bounds.task_count_max
         + 0.25 * total_waypoints / maximum_total_waypoints
-        + 0.25 * len(workload.patrol_routes) / bounds.route_count_max,
+        + 0.25 * len(workload.patrol_routes) / bounds.route_count_max
+        + 0.05 * facility_event_count,
     )
 
 

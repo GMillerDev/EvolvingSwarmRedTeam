@@ -36,7 +36,60 @@ Archives reject infrastructure failures and duplicate phenotypes, persist their 
 produce mechanism coverage and quality-diversity reports. Replay verification is exposed through an
 adapter hook so live elite packages can use the existing `ReplayVerifier`. A deterministic evaluator
 exercises this path without ROS; the live evaluator that delegates to `ExperimentOrchestrator`
-remains the next integration boundary.
+is implemented in Phase 4.
+
+`SearchRunner` owns the live search lifecycle above the ask/tell interface. It enforces an exact
+candidate budget, common ordered realization seeds, sequential ROS execution, screening and
+confirmation, behavioral novelty assignment, batch-boundary checkpoints, and terminal cleanup
+accounting. It writes the specification's search-directory layout and produces per-generation
+mechanism, novelty, complexity, entropy, and post-hoc MAP-Elites diagnostics. Every algorithm is
+measured through the same post-hoc archive, so later comparisons do not give MAP-Elites exclusive
+access to coverage or quality-diversity measures.
+
+`LiveCandidateEvaluator` decodes and validates a phenotype before delegating to
+`ExperimentOrchestrator`, then translates the run package back into the search evaluation contract.
+Valid terminal evaluations may be reused only when phenotype, realization seed, simulator/source
+environment fingerprint, metric configuration, failure-detector configuration, and defender ID
+match. Infrastructure and cleanup failures are never cached as successful evidence.
+
+## Benchmark boundary
+
+`BenchmarkRunner` expands a persisted algorithm-by-search-seed design into isolated sequential
+`SearchRunner` instances. It overrides only algorithm, search seed, candidate budget, and the
+per-run empty cache directory; capability bounds, confirmation seeds, descriptors, MAP bins,
+simulator settings, and evaluation policy remain common. A fairness fingerprint covers this common
+envelope. Each algorithm is evaluated with the same post-hoc archive metrics at the same candidate
+checkpoints.
+
+The statistics layer operates only on ordinary persisted models. It reports median, interquartile
+range, a seeded percentile-bootstrap interval for the median, and paired common-seed differences.
+Failure-discovery observations retain a censor count. The generated report is descriptive and does
+not infer superiority. Wall-clock accounting is written to a sidecar rather than the scientific
+evaluation stream, preserving Phase 4's byte-identical interrupted/resumed results. The benchmark
+CLI accepts a destination override so persisted configurations can be rerun without mutation.
+
+## Phase 6 actuator and coevolution boundaries
+
+Facility genes are optional search-genome components and remain absent unless a versioned
+capability document both enables the actuator and allowlists its target. The first live actuator
+publishes a fleet-specific `LaneRequest`, observes the corresponding transient-local
+`ClosedLanes` state, records both topics, and reopens the lane during shutdown. Publication waits
+for the fleet and recorder subscriptions, and bounded retries handle DDS discovery without accepting
+an unverified mutation.
+
+The replay boundary now includes the capability document and digest. It also compares the logical
+facility actuator sequence without comparing its nondeterministic timestamps.
+
+`CoevolutionRunner` owns a deterministic scenario-versus-defender matrix. Its scenario panel joins
+the current population, severe archive, novel archive, and standard missions. Its defender panel
+joins the current population, defender hall of fame, and fixed RMF baseline artifact. Every matrix
+cell records exact versions, ordered realization seeds, individual results, aggregate payoffs, and a
+replay digest. `CrossplayVerifier` reconstructs all cells from persisted participants.
+
+The current evolved defender implementation is a synthetic four-gene policy used to validate
+selection, retention, persistence, and replay. The `Defender` materialization protocol is the seam
+for a future live controller configuration or checkpoint. The present baseline artifact does not
+turn the deterministic matrix into live RMF cross-play.
 
 ## Event contract
 

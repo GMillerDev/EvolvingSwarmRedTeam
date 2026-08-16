@@ -1,0 +1,15 @@
+version: office-kilted-v2-lane-closure-20
+world: office
+fleet_name: tinyRobot
+supported_robot_count: 2
+default_charger_count: 2
+waypoints: [coe, hardware_2, lounge, pantry, supplies]
+robot_ids: [tinyRobot1, tinyRobot2]
+lane_ids: ["20"]
+supports_speed_multiplier: false
+supports_acceleration_multiplier: false
+supports_lane_closure: true
+supports_door_delay: false
+supports_charger_count: false
+supports_robot_failure: false
+supports_state_update_latency: false

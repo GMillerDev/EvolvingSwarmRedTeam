@@ -1,0 +1,46 @@
+benchmark:
+  benchmark_id: phase5_fake_validation_seedset_v1
+  algorithms:
+    - random_search
+    - severity_ga
+    - fitness_sharing_ga
+    - nsga2
+    - map_elites
+  search_seeds: [9101, 9102, 9103, 9104, 9105]
+  evaluation_budget: 64
+  budget_checkpoints: [16, 32, 64]
+  baseline_algorithm: random_search
+  confidence_level: 0.95
+  bootstrap_resamples: 5000
+  analysis_seed: 5519
+  require_complete_suite: true
+
+search:
+  population_size: 16
+  offspring_size: 16
+  tournament_size: 3
+  checkpoint_interval: 16
+  realization_seeds: [1042, 1043, 1044]
+
+genome: {}
+
+descriptor:
+  novelty_k: 10
+
+confirmation:
+  total_runs: 3
+  minimum_valid_runs: 3
+  reproducibility_threshold: 0.6666667
+  confirm_all: true
+
+map_elites: {}
+
+execution:
+  evaluator: fake
+  parallelism: 1
+  reuse_cache: false
+  cache_directory: ./results/search_cache
+  defender_id: deterministic_fake_v1
+  abort_on_infrastructure_failure: true
+  verify_elites: false
+  maximum_elite_replays: 0

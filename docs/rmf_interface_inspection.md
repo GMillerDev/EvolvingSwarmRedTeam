@@ -117,6 +117,20 @@ Facility state relevant to the run includes `/door_states`
 (`rmf_fleet_msgs/msg/LaneStates`), and `/closed_lanes`
 (`rmf_fleet_msgs/msg/ClosedLanes`).
 
+## Phase 6 lane closure actuator
+
+The live-validated mutation interface is:
+
+| Direction | Topic | Type | Relevant fields |
+| --- | --- | --- | --- |
+| command | `/lane_closure_requests` | `rmf_fleet_msgs/msg/LaneRequest` | `fleet_name`, `open_lanes`, `close_lanes` |
+| state | `/closed_lanes` | `rmf_fleet_msgs/msg/ClosedLanes` | `fleet_name`, `closed_lanes` |
+
+The `/closed_lanes` publisher offers reliable, transient-local QoS with depth one. The adapter uses
+the same QoS for verification. When rosbag is enabled, the one-shot request publisher waits for two
+matching subscriptions—the fleet adapter and recorder—before sending. Shutdown sends the inverse
+request and requires telemetry to show the lane open before RMF termination.
+
 ## Simulator reset and restart
 
 Gazebo advertised:
@@ -150,6 +164,7 @@ The MCAP recorder includes:
 /door_states
 /lane_states
 /closed_lanes
+/lane_closure_requests
 /rmf_task/bid_notice
 /rmf_task/bid_response
 /rmf_task/dispatch_request

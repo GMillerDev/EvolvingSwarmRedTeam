@@ -1,0 +1,40 @@
+search:
+  algorithm: random_search
+  search_seed: 7401
+  evaluation_budget: 1
+  population_size: 2
+  offspring_size: 1
+  tournament_size: 2
+  checkpoint_interval: 1
+  realization_seeds: [1042, 1043, 1044]
+
+genome:
+  task_count_min: 1
+  task_count_max: 1
+  arrival_interval_min: 8.0
+  arrival_interval_max: 8.0
+  priority_skew_min: 0.0
+  priority_skew_max: 0.0
+  route_count_min: 1
+  route_count_max: 1
+  route_length_min: 2
+  route_length_max: 2
+
+descriptor: {}
+
+confirmation:
+  total_runs: 3
+  minimum_valid_runs: 3
+  confirm_all: false
+
+map_elites: {}
+
+execution:
+  evaluator: live
+  parallelism: 1
+  reuse_cache: false
+  cache_directory: ./results/search_cache
+  defender_id: rmf_office_baseline
+  abort_on_infrastructure_failure: true
+  verify_elites: true
+  maximum_elite_replays: 1

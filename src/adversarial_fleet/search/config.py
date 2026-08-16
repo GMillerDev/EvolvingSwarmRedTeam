@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Literal
+
 from pydantic import Field, model_validator
 
 from .models import SearchModel
@@ -30,6 +33,7 @@ class GenomeBounds(SearchModel):
     route_count_max: int = Field(default=6, ge=1, le=8)
     route_length_min: int = Field(default=2, ge=2, le=8)
     route_length_max: int = Field(default=6, ge=2, le=8)
+    lane_closure_probability: float = Field(default=0.20, ge=0, le=1)
 
     @model_validator(mode="after")
     def validate_ranges(self) -> "GenomeBounds":
@@ -118,3 +122,56 @@ class MapElitesConfig(SearchModel):
         if self.low_loss_upper >= self.medium_loss_upper:
             raise ValueError("low loss boundary must be below medium loss boundary")
         return self
+
+
+class SearchSettings(SearchModel):
+    algorithm: Literal[
+        "random_search",
+        "severity_ga",
+        "fitness_sharing_ga",
+        "nsga2",
+        "map_elites",
+    ] = "map_elites"
+    search_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    search_seed: int = Field(default=7001, ge=0, le=2**32 - 1)
+    evaluation_budget: int = Field(default=20, ge=1)
+    population_size: int = Field(default=20, ge=2)
+    offspring_size: int = Field(default=20, ge=1)
+    tournament_size: int = Field(default=3, ge=2)
+    checkpoint_interval: int = Field(default=1, ge=1)
+    realization_seeds: tuple[int, ...] = Field(
+        default=(1042, 1043, 1044),
+        min_length=1,
+    )
+
+
+class SearchExecutionConfig(SearchModel):
+    evaluator: Literal["live", "fake"] = "live"
+    parallelism: Literal[1] = 1
+    reuse_cache: bool = True
+    cache_directory: Path = Path("./results/search_cache")
+    defender_id: str = Field(default="rmf_office_baseline", min_length=1)
+    abort_on_infrastructure_failure: bool = True
+    verify_elites: bool = True
+    maximum_elite_replays: int = Field(default=1, ge=0)
+
+
+class SearchFileConfig(SearchModel):
+    search: SearchSettings = Field(default_factory=SearchSettings)
+    genome: GenomeBounds = Field(default_factory=GenomeBounds)
+    descriptor: DescriptorConfig = Field(default_factory=DescriptorConfig)
+    confirmation: ConfirmationConfig = Field(default_factory=ConfirmationConfig)
+    map_elites: MapElitesConfig = Field(default_factory=MapElitesConfig)
+    execution: SearchExecutionConfig = Field(default_factory=SearchExecutionConfig)
+
+    @model_validator(mode="after")
+    def validate_confirmation_seeds(self) -> "SearchFileConfig":
+        if len(self.search.realization_seeds) < self.confirmation.total_runs:
+            raise ValueError("realization seed count must cover confirmation total_runs")
+        return self
+
+
+def load_search_config(path: Path) -> SearchFileConfig:
+    from adversarial_fleet.config import load_document
+
+    return SearchFileConfig.model_validate(load_document(path))

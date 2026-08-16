@@ -34,7 +34,10 @@ def validate_scenario(
         errors.append(f"unknown or unverified waypoints: {', '.join(unknown_places)}")
     if scenario.fleet.max_speed_multiplier != 1.0 and not capabilities.supports_speed_multiplier:
         errors.append("max_speed_multiplier mutation is not verified for this adapter")
-    if scenario.fleet.acceleration_multiplier != 1.0 and not capabilities.supports_acceleration_multiplier:
+    if (
+        scenario.fleet.acceleration_multiplier != 1.0
+        and not capabilities.supports_acceleration_multiplier
+    ):
         errors.append("acceleration_multiplier mutation is not verified for this adapter")
     if scenario.facility.blocked_lane_id is not None:
         if scenario.facility.blocked_lane_id not in capabilities.lane_ids:
@@ -53,6 +56,9 @@ def validate_scenario(
             errors.append("failed_robot_id does not identify a verified Office robot")
         if not capabilities.supports_robot_failure:
             errors.append("robot failure injection is not verified for this adapter")
-    if scenario.faults.state_update_latency_ms != 0 and not capabilities.supports_state_update_latency:
+    if (
+        scenario.faults.state_update_latency_ms != 0
+        and not capabilities.supports_state_update_latency
+    ):
         errors.append("state_update_latency_ms mutation is not verified for this adapter")
     return ValidationResult(not errors, tuple(errors))

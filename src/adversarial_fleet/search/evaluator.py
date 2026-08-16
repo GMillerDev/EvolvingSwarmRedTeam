@@ -52,6 +52,9 @@ class DeterministicFakeEvaluator:
         unique_ratio = len(set(route_points)) / len(route_points)
         overlap = 1.0 - unique_ratio
         density = workload.task_count / max(0.5, workload.arrival_interval_seconds)
+        if genome.facility is not None:
+            density *= 1.35
+            overlap = min(1.0, overlap + 0.15)
         seed_material = f"{phenotype.realization_id}:fake-evaluator-v1"
         jitter_rng = random.Random(
             int(hashlib.sha256(seed_material.encode("utf-8")).hexdigest()[:16], 16)
@@ -100,6 +103,7 @@ class DeterministicFakeEvaluator:
             "recovery_event_count": 0.0,
             "recovery_loop_count": 0.0,
             "robot_failure_count": 0.0,
+            "lane_closure_event_count": float(genome.facility is not None),
             "fleet_fragmentation_score": min(1.0, overlap),
             "robot_idle_time_mean": 0.0,
             "robot_idle_time_variance": 0.0,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 from pydantic import ConfigDict, Field
 
@@ -19,6 +20,7 @@ class ScenarioCapabilities(StrictModel):
 
     version: str = "office-kilted-v1"
     world: str = "office"
+    fleet_name: str = "tinyRobot"
     supported_robot_count: int = Field(default=2, ge=1, le=12)
     default_charger_count: int = Field(default=2, ge=0, le=12)
     waypoints: frozenset[str] = OFFICE_WAYPOINTS
@@ -38,6 +40,7 @@ class ScenarioCapabilities(StrictModel):
         return {
             "version": self.version,
             "world": self.world,
+            "fleet_name": self.fleet_name,
             "supported_robot_count": self.supported_robot_count,
             "default_charger_count": self.default_charger_count,
             "waypoints": sorted(self.waypoints),
@@ -55,3 +58,9 @@ class ScenarioCapabilities(StrictModel):
     def digest(self) -> str:
         canonical = json.dumps(self.normalized(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def load_capabilities(path: Path) -> ScenarioCapabilities:
+    from adversarial_fleet.config import load_document
+
+    return ScenarioCapabilities.model_validate(load_document(path))

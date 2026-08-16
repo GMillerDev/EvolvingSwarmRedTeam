@@ -72,4 +72,3 @@ class TaskSpec(StrictModel):
     rounds: int = Field(default=1, ge=1)
     start_offset_seconds: float = Field(default=0, ge=0)
     priority: int = Field(default=0, ge=0)
-

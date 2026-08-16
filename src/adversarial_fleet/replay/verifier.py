@@ -8,6 +8,7 @@ from typing import Any
 from adversarial_fleet.config import AppConfig, load_config, load_document
 from adversarial_fleet.orchestrator.runner import ExperimentOrchestrator
 from adversarial_fleet.scenarios.genome import ScenarioGenome, TaskSpec
+from adversarial_fleet.scenarios.capabilities import ScenarioCapabilities
 from adversarial_fleet.scenarios.task_generator import generate_tasks, task_sequence_hash
 
 
@@ -29,6 +30,28 @@ def _within_tolerance(original: float, replay: float, tolerance: dict[str, float
     absolute = tolerance.get("absolute", 0.0)
     relative = tolerance.get("relative", 0.0) * max(abs(original), 1e-9)
     return difference <= max(absolute, relative)
+
+
+def _actuator_sequence(events_path: Path) -> list[dict[str, Any]]:
+    """Return the deterministic, timestamp-independent facility actuator trace."""
+    if not events_path.is_file():
+        return []
+    sequence: list[dict[str, Any]] = []
+    for line in events_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        if event.get("event") not in {"lane_closed", "lane_reopened"}:
+            continue
+        sequence.append(
+            {
+                "event": event["event"],
+                "fleet_name": event.get("fleet_name"),
+                "lane_id": str(event.get("lane_id")),
+                "actuator_verified": bool(event.get("actuator_verified", False)),
+            }
+        )
+    return sequence
 
 
 def verify_rosbag(package_dir: Path) -> dict[str, Any]:
@@ -53,42 +76,60 @@ class ReplayVerifier:
         package_dir = package_dir.resolve()
         scenario = ScenarioGenome.model_validate(load_document(package_dir / "scenario.yaml"))
         config: AppConfig = load_config(package_dir / "run_config.yaml")
-        saved_tasks = [TaskSpec.model_validate(item) for item in _load_json(package_dir / "tasks.json")]
+        capabilities_path = package_dir / "capabilities.json"
+        capabilities = (
+            ScenarioCapabilities.model_validate(load_document(capabilities_path))
+            if capabilities_path.is_file()
+            else ScenarioCapabilities()
+        )
+        saved_tasks = [
+            TaskSpec.model_validate(item) for item in _load_json(package_dir / "tasks.json")
+        ]
         generated_tasks = generate_tasks(scenario)
         original_seed = _load_json(package_dir / "seed.json")
         original_metrics_doc = _load_json(package_dir / "metrics.json")
         original_failure = _load_json(package_dir / "failure.json")
+        original_run_result = _load_json(package_dir / "run_result.json")
         original_task_hash = task_sequence_hash(saved_tasks)
         generated_task_hash = task_sequence_hash(generated_tasks)
         bag = verify_rosbag(package_dir)
         prerequisites = {
             "seed_matches": original_seed["seed"] == scenario.seed,
             "scenario_hash_matches": original_seed["scenario_sha256"] == scenario.digest(),
+            "capabilities_hash_matches": original_seed.get("capabilities_sha256")
+            in {None, capabilities.digest()},
             "saved_tasks_match_generated": original_task_hash == generated_task_hash,
             "saved_task_hash_matches": (
                 original_seed.get("task_sequence_sha256") == original_task_hash
             ),
             "rosbag_valid": bag["valid"],
+            "original_cleanup_valid": (
+                original_run_result.get("cleanup_error") is None
+                and int(original_run_result.get("orphan_process_count", 0)) == 0
+            ),
         }
         if not all(prerequisites.values()):
             report = {"verified": False, "prerequisites": prerequisites, "rosbag": bag}
             self._write(package_dir, report)
             return report
 
-        replay_result = ExperimentOrchestrator(config).run(scenario, candidate_id="replay")
+        replay_result = ExperimentOrchestrator(config, capabilities=capabilities).run(
+            scenario,
+            candidate_id="replay",
+        )
         replay_tasks = [
             TaskSpec.model_validate(item)
             for item in _load_json(replay_result.run_dir / "tasks.json")
         ]
         replay_metrics_doc = _load_json(replay_result.run_dir / "metrics.json")
         replay_failure = _load_json(replay_result.run_dir / "failure.json")
+        replay_run_result = _load_json(replay_result.run_dir / "run_result.json")
         original_score = float(original_metrics_doc["fitness"]["score"])
         replay_score = float(replay_metrics_doc["fitness"]["score"])
         comparisons = {
             "task_sequence_hash": task_sequence_hash(replay_tasks) == original_task_hash,
-            "scenario_hash": scenario.digest() == _load_json(
-                replay_result.run_dir / "seed.json"
-            )["scenario_sha256"],
+            "scenario_hash": scenario.digest()
+            == _load_json(replay_result.run_dir / "seed.json")["scenario_sha256"],
             "mission_result": replay_result.status
             == _load_json(package_dir / "run_result.json")["status"],
             "failure_type": replay_failure.get("failure_type")
@@ -96,8 +137,21 @@ class ReplayVerifier:
             "failure_score": _within_tolerance(
                 original_score, replay_score, METRIC_TOLERANCES["failure_score"]
             ),
+            "actuator_sequence": _actuator_sequence(
+                replay_result.run_dir / "events.jsonl"
+            )
+            == _actuator_sequence(package_dir / "events.jsonl"),
+            "cleanup_valid": (
+                replay_run_result.get("cleanup_error") is None
+                and int(replay_run_result.get("orphan_process_count", 0)) == 0
+            ),
         }
-        for metric in ("mean_task_latency", "deadlock_duration", "tasks_completed", "tasks_incomplete"):
+        for metric in (
+            "mean_task_latency",
+            "deadlock_duration",
+            "tasks_completed",
+            "tasks_incomplete",
+        ):
             comparisons[metric] = _within_tolerance(
                 float(original_metrics_doc.get(metric, 0.0)),
                 float(replay_metrics_doc.get(metric, 0.0)),

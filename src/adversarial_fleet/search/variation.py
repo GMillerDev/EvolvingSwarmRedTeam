@@ -5,7 +5,7 @@ import random
 from adversarial_fleet.scenarios.capabilities import ScenarioCapabilities
 
 from .config import GenomeBounds, VariationConfig
-from .models import AdversarialGenome, WorkloadGenome
+from .models import AdversarialGenome, FacilitySearchGenome, WorkloadGenome
 
 
 def _random_route(
@@ -37,6 +37,15 @@ def sample_genome(
         )
         for _ in range(route_count)
     )
+    facility = None
+    if (
+        capabilities.supports_lane_closure
+        and capabilities.lane_ids
+        and rng.random() < bounds.lane_closure_probability
+    ):
+        facility = FacilitySearchGenome(
+            blocked_lane_id=rng.choice(tuple(sorted(capabilities.lane_ids)))
+        )
     return AdversarialGenome(
         workload=WorkloadGenome(
             task_count=rng.randint(bounds.task_count_min, bounds.task_count_max),
@@ -49,7 +58,8 @@ def sample_genome(
                 bounds.priority_skew_max,
             ),
             patrol_routes=routes,
-        )
+        ),
+        facility=facility,
     )
 
 
@@ -185,13 +195,26 @@ def mutate_genome(
             bounds=bounds,
         )
 
+    facility = genome.facility
+    if capabilities.supports_lane_closure and capabilities.lane_ids:
+        if rng.random() < probability:
+            choices = tuple(sorted(capabilities.lane_ids))
+            if facility is None:
+                facility = FacilitySearchGenome(blocked_lane_id=rng.choice(choices))
+            elif len(choices) == 1 or rng.random() < 0.5:
+                facility = None
+            else:
+                alternatives = tuple(lane for lane in choices if lane != facility.blocked_lane_id)
+                facility = FacilitySearchGenome(blocked_lane_id=rng.choice(alternatives))
+
     candidate = AdversarialGenome(
         workload=WorkloadGenome(
             task_count=task_count,
             arrival_interval_seconds=interval,
             priority_skew=priority,
             patrol_routes=tuple(tuple(route) for route in routes),
-        )
+        ),
+        facility=facility,
     )
     if candidate.digest() == genome.digest():
         if bounds.task_count_min < bounds.task_count_max:
@@ -202,7 +225,8 @@ def mutate_genome(
                 workload=WorkloadGenome(
                     **candidate.workload.model_dump(exclude={"task_count"}),
                     task_count=forced_task_count,
-                )
+                ),
+                facility=facility,
             )
         else:
             waypoints = tuple(sorted(capabilities.waypoints))
@@ -216,7 +240,8 @@ def mutate_genome(
                     workload=WorkloadGenome(
                         **candidate.workload.model_dump(exclude={"patrol_routes"}),
                         patrol_routes=tuple(tuple(route) for route in forced_routes),
-                    )
+                    ),
+                    facility=facility,
                 )
                 if candidate.digest() != genome.digest():
                     break
@@ -251,6 +276,11 @@ def crossover_genomes(
     )
     if mixed_route is not None:
         routes[rng.randrange(len(routes))] = mixed_route
+    facility = left.facility
+    if left.facility != right.facility and (
+        left.facility is not None or right.facility is not None
+    ):
+        facility = rng.choice((left.facility, right.facility))
     return AdversarialGenome(
         workload=WorkloadGenome(
             task_count=rng.choice((left.workload.task_count, right.workload.task_count)),
@@ -262,5 +292,6 @@ def crossover_genomes(
             ),
             priority_skew=rng.choice((left.workload.priority_skew, right.workload.priority_skew)),
             patrol_routes=tuple(routes),
-        )
+        ),
+        facility=facility,
     )

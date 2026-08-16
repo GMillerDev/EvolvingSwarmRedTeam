@@ -12,8 +12,8 @@ Implementation status as of 2026-07-23:
   phenotype identities, and search-facing severity terminology.
 - Phase 1 enabling subset implemented: typed search configuration, deterministic
   sampling and variation, ask/tell interfaces, deterministic fake evaluation, JSONL
-  result storage, and atomic checkpoint/resume. The live evaluator, cache, and search
-  CLI remain pending.
+  result storage, and atomic checkpoint/resume. The previously deferred live
+  evaluator, environment-aware cache, and search CLI were completed during Phase 4.
 - Phase 2 implemented: behavior descriptors and distance, population/archive novelty,
   reproducibility and robust-severity aggregation, complexity, screening/confirmation,
   severity-only GA, and behavior-space fitness-sharing GA.
@@ -21,7 +21,12 @@ Implementation status as of 2026-07-23:
   objective-space crowding, MAP-Elites behavioral niches, deterministic archive
   persistence/reporting, duplicate-phenotype safeguards, and elite replay
   verification hooks.
-- Phases 4-6 remain pending.
+- Phase 4 implemented and live-validated: exact-budget search runner, real
+  `ExperimentOrchestrator` evaluator, environment-aware evaluation cache, resumable
+  batch checkpoints, search CLI, search-directory artifacts, per-generation weakness
+  diagnostics, rosbag-backed replay verification, and cleanup accounting. A bounded
+  one-candidate Office search and its replay completed unattended with zero orphans.
+- Phases 5-6 remain pending.
 
 ## 1. Purpose
 
@@ -894,6 +899,13 @@ Exit criterion: at least one full live search completes unattended with zero orp
 
 Exit criterion: benchmark report is fully reproducible from persisted configuration.
 
+Implementation status (2026-08-06): the coordinator, fairness manifest, common-budget
+checkpoint reporting, seeded bootstrap intervals, paired comparisons, and output-directory
+reproduction flow are implemented. A five-algorithm, five-seed deterministic validation completed
+25 searches and reproduced its design, fairness, scientific-result, and all candidate-sequence
+fingerprints from the persisted configuration. This validates benchmark machinery only; see
+`docs/phase5_validation_report.md`. It is not a live Open-RMF performance comparison.
+
 ### Phase 6: new actuators and defender coevolution
 
 - Add and live-validate facility/fault genes one actuator at a time.
@@ -901,6 +913,19 @@ Exit criterion: benchmark report is fully reproducible from persisted configurat
 - Add hall-of-fame evaluation and standard-mission retention tests.
 
 Exit criterion: both populations adapt and all payoffs remain replayable.
+
+Implementation status (2026-08-06): one facility mutation, directed lane closure, is capability
+gated and live-validated against the pinned Kilted Office environment. The implementation includes
+versioned defender artifacts, two adapting populations, complete current/archive/standard versus
+current/HOF/baseline cross-play, exact participant persistence, and independent recomputation of all
+924 deterministic validation payoffs. The live lane scenario and its fresh replay completed with
+verified close/reopen events, non-empty command/state MCAP topics, and zero orphans. See
+`docs/phase6_validation_report.md`.
+
+This satisfies the exit criterion for the deterministic coevolution machinery, not for live
+controller learning. Evolved defender genes are currently synthetic and the fixed RMF baseline is
+not executed for each matrix cell. A live defender materializer and bounded live cross-play study
+remain required before claiming competitive adaptation in Open-RMF.
 
 ## 24. Milestone acceptance criteria
 
@@ -934,3 +959,48 @@ The following values are initial defaults, not scientific conclusions:
 
 They shall be configuration values and shall be included in every search and benchmark
 artifact. Changes to them invalidate direct comparisons unless the benchmark is rerun.
+
+### 25.1 Deferred failure-diversity review after Phase 6
+
+The Phase 3 deterministic evaluator and workload-only genome do not constitute
+evidence that Open-RMF exposes only the failure mechanisms found in synthetic
+validation. The present synthetic evaluator can emit only deadlock, task starvation,
+task timeout/incompletion, and latency degradation. It assigns exactly one primary
+mechanism through an ordered classifier, so co-occurring symptoms are compressed.
+Negotiation, collision, recovery, communication, energy, facility, and injected robot
+fault mechanisms are unreachable until their actuators and telemetry are implemented.
+
+A 10,000-genome uniform diagnostic sweep found that latency degradation and task
+timeout/incompletion each occupied less than 3% of the current synthetic search
+space. A 48-candidate validation budget therefore commonly misses one of them. Across
+ten search seeds, NSGA-II found all four reachable mechanisms once and MAP-Elites
+found all four four times. These results indicate a combination of reachability,
+class imbalance, small budget, classifier precedence, and possible selection pressure;
+they do not establish premature convergence as the primary cause.
+
+After Phase 6, review and, where supported by live evidence, implement:
+
+1. A primary mechanism plus secondary symptom/failure signature instead of one
+   exclusive failure label.
+2. Capability-validated genes for facility disruptions, robot degradation, state
+   latency/loss, battery and charging, localization/command delay, obstacles, and
+   richer task semantics.
+3. RMF negotiation, schedule-conflict, recovery, battery, and collision-adjacent
+   telemetry.
+4. Per-generation mechanism coverage, behavioral entropy, genotype diversity,
+   genealogy, turnover, and selection-pressure diagnostics.
+5. Random reachability sweeps, stratified initialization, and mechanism-conditioned
+   emitters before attributing missing categories to an evolutionary algorithm.
+6. Larger multi-seed budgets and power/coverage analysis for rare failure regions.
+
+This review is intentionally deferred until Phase 6 so the implemented live,
+benchmarking, and coevolution layers can provide evidence unavailable in the current
+synthetic workload-only validation.
+
+Phase 6 review outcome (2026-08-06): the new lane-closure gene proved that the capability and
+actuation path can be extended without enabling a no-op mutation. Its isolated smoke mission did
+not traverse the closed lane and produced no failure, while the coevolution evaluator remains
+synthetic. There is therefore insufficient live evidence to add new exclusive failure labels or to
+attribute missing categories to premature convergence. The primary-plus-secondary signature and
+mechanism diagnostics above remain the next taxonomy work, after live tests place each new actuator
+on a mission-relevant path.

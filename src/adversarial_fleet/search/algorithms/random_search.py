@@ -13,6 +13,8 @@ from ..variation import sample_genome
 
 
 class RandomSearch:
+    algorithm_name = "random_search"
+
     def __init__(
         self,
         *,
@@ -26,6 +28,8 @@ class RandomSearch:
         self.evaluations: list[AggregateEvaluation] = []
 
     def ask(self, count: int) -> list[AdversarialGenome]:
+        if count < 1:
+            raise ValueError("count must be positive")
         return [
             sample_genome(
                 self.rng,

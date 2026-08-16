@@ -30,13 +30,21 @@ class WorkloadGenome(SearchModel):
         return self
 
 
+class FacilitySearchGenome(SearchModel):
+    """Facility genes with a live actuator declared by the capability document."""
+
+    blocked_lane_id: str = Field(min_length=1)
+
+
 class AdversarialGenome(SearchModel):
     """Evolvable genes only; search and realization seeds are deliberately absent."""
 
     workload: WorkloadGenome
+    facility: FacilitySearchGenome | None = None
 
     def normalized(self) -> dict[str, object]:
-        return self.model_dump(mode="json")
+        # Excluding absent future genes preserves Phase 0-5 workload-only identities.
+        return self.model_dump(mode="json", exclude_none=True)
 
     def digest(self) -> str:
         canonical = json.dumps(self.normalized(), sort_keys=True, separators=(",", ":"))

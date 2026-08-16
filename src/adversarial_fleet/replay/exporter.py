@@ -9,6 +9,7 @@ from typing import Any
 from adversarial_fleet.config import AppConfig
 from adversarial_fleet.failures.models import FailureReport
 from adversarial_fleet.scenarios.genome import ScenarioGenome, TaskSpec
+from adversarial_fleet.scenarios.capabilities import ScenarioCapabilities
 from adversarial_fleet.scenarios.task_generator import task_sequence_hash
 
 
@@ -27,6 +28,7 @@ class ReplayExporter:
         metrics: dict[str, float],
         fitness: dict[str, Any],
         failure: FailureReport,
+        capabilities: ScenarioCapabilities | None = None,
     ) -> None:
         output_dir.mkdir(parents=True, exist_ok=True)
         try:
@@ -45,8 +47,13 @@ class ReplayExporter:
                 "seed": scenario.seed,
                 "scenario_sha256": scenario.digest(),
                 "task_sequence_sha256": task_sequence_hash(tasks),
+                "capabilities_sha256": (
+                    capabilities.digest() if capabilities is not None else None
+                ),
             },
         )
+        if capabilities is not None:
+            _write_json(output_dir / "capabilities.json", capabilities.normalized())
         _write_json(output_dir / "tasks.json", [task.model_dump(mode="json") for task in tasks])
         _write_json(output_dir / "metrics.json", metrics | {"fitness": fitness})
         _write_json(output_dir / "failure.json", failure.model_dump(mode="json"))

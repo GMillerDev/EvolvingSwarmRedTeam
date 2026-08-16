@@ -80,6 +80,7 @@ class CandidateEvaluation(SearchModel):
     failure_onset_seconds: float | None = Field(default=None, ge=0)
     cleanup_error: str | None = None
     run_path: str | None = None
+    orphan_process_count: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
     def validate_terminal_state(self) -> "CandidateEvaluation":

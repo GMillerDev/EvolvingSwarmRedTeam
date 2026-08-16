@@ -1,0 +1,28 @@
+coevolution:
+  experiment_id: phase6_fake_coevolution_v1
+  seed: 12001
+  generations: 5
+  scenario_population_size: 8
+  defender_population_size: 8
+  scenario_elite_count: 2
+  defender_elite_count: 2
+  severe_archive_size: 8
+  novel_archive_size: 8
+  defender_hall_of_fame_size: 8
+  realization_seeds: [1042, 1043, 1044]
+  scenario_novelty_weight: 0.15
+  defender_retention_weight: 0.35
+  minimum_standard_retention: 0.80
+  verify_payoffs: true
+
+genome: {}
+
+scenario_variation:
+  mutation_probability: 0.35
+  crossover_probability: 0.80
+  numeric_sigma: 0.15
+
+defender:
+  mutation_probability: 0.40
+  mutation_sigma: 0.12
+  operational_cost_scale: 0.40

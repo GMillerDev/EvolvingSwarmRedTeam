@@ -8,6 +8,7 @@ TASK_API_RESPONSES = "/task_api_responses"
 DOOR_STATES = "/door_states"
 LIFT_STATES = "/lift_states"
 CLOSED_LANES = "/closed_lanes"
+LANE_CLOSURE_REQUESTS = "/lane_closure_requests"
 LANE_STATES = "/lane_states"
 TRAFFIC_BID_NOTICE = "/rmf_task/bid_notice"
 TRAFFIC_BID_RESPONSE = "/rmf_task/bid_response"
@@ -25,6 +26,7 @@ ROSBAG_TOPICS = (
     TASK_API_REQUESTS,
     TASK_API_RESPONSES,
     DOOR_STATES,
+    LANE_CLOSURE_REQUESTS,
     CLOSED_LANES,
     LANE_STATES,
     TRAFFIC_BID_NOTICE,

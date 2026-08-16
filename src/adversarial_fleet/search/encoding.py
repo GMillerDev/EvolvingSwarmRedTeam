@@ -40,7 +40,7 @@ def decode_genome(
             patrol_routes=[list(route) for route in workload.patrol_routes],
         ),
         facility=FacilityGenome(
-            blocked_lane_id=None,
+            blocked_lane_id=(None if genome.facility is None else genome.facility.blocked_lane_id),
             door_delay_seconds=0.0,
             charger_count=capabilities.default_charger_count,
         ),

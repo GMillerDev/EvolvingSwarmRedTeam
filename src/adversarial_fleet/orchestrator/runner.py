@@ -14,6 +14,7 @@ from adversarial_fleet.failures.models import FailureType
 from adversarial_fleet.metrics import calculate_fitness
 from adversarial_fleet.replay.exporter import ReplayExporter
 from adversarial_fleet.scenarios.genome import ScenarioGenome
+from adversarial_fleet.scenarios.capabilities import ScenarioCapabilities
 from adversarial_fleet.scenarios.task_generator import generate_tasks
 from adversarial_fleet.scenarios.validation import validate_scenario
 from adversarial_fleet.telemetry.structured_logger import StructuredLogger
@@ -32,17 +33,22 @@ class RunResult:
 
 
 class ExperimentOrchestrator:
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        capabilities: ScenarioCapabilities | None = None,
+    ) -> None:
         self.config = config
+        self.capabilities = capabilities or ScenarioCapabilities()
 
     def run(self, scenario: ScenarioGenome, candidate_id: str = "candidate_0000") -> RunResult:
-        validation = validate_scenario(scenario)
+        validation = validate_scenario(scenario, self.capabilities)
         validation.require_valid()
         tasks = generate_tasks(scenario)
         run_id = self._run_id(scenario.seed, candidate_id)
         run_dir = self.config.project.output_dir.resolve() / "runs" / run_id
         run_dir.mkdir(parents=True, exist_ok=False)
-        adapter = RmfDemoAdapter(self.config, run_dir)
+        adapter = RmfDemoAdapter(self.config, run_dir, capabilities=self.capabilities)
         logger = StructuredLogger(
             run_dir / "orchestrator.jsonl",
             run_id=run_id,
@@ -60,16 +66,13 @@ class ExperimentOrchestrator:
             logger.log("run_started", seed=scenario.seed, scenario_sha256=scenario.digest())
             health: dict[str, Any] = {}
             startup_started = time.monotonic()
-            startup_deadline = (
-                startup_started + self.config.simulation.startup_timeout_seconds
-            )
+            startup_deadline = startup_started + self.config.simulation.startup_timeout_seconds
             for attempt in range(1, self.config.simulation.startup_max_attempts + 1):
                 logger.log("simulation_starting", startup_attempt=attempt)
                 adapter.initialize(attempt=attempt)
                 attempt_deadline = min(
                     startup_deadline,
-                    time.monotonic()
-                    + self.config.simulation.startup_attempt_timeout_seconds,
+                    time.monotonic() + self.config.simulation.startup_attempt_timeout_seconds,
                 )
                 while time.monotonic() < attempt_deadline:
                     health = adapter.health_check()
@@ -89,16 +92,18 @@ class ExperimentOrchestrator:
                     attempt < self.config.simulation.startup_max_attempts
                     and time.monotonic() < startup_deadline
                 ):
-                    adapter = RmfDemoAdapter(self.config, run_dir)
+                    adapter = RmfDemoAdapter(
+                        self.config,
+                        run_dir,
+                        capabilities=self.capabilities,
+                    )
                     continue
                 raise TimeoutError(
-                    "RMF did not become ready after "
-                    f"{attempt} startup attempt(s): {health}"
+                    f"RMF did not become ready after {attempt} startup attempt(s): {health}"
                 )
             else:
                 raise TimeoutError(
-                    "RMF did not become ready within the configured startup attempts: "
-                    f"{health}"
+                    f"RMF did not become ready within the configured startup attempts: {health}"
                 )
 
             adapter.reset(scenario.seed, scenario.normalized())
@@ -111,11 +116,15 @@ class ExperimentOrchestrator:
                 adapter.observe()
                 if adapter.has_failed():
                     status = "failure"
-                    logger.log("failure_detected", simulation_time=adapter.observe()["simulation_time"])
+                    logger.log(
+                        "failure_detected", simulation_time=adapter.observe()["simulation_time"]
+                    )
                     break
                 if adapter.is_complete():
                     status = "completed"
-                    logger.log("mission_completed", simulation_time=adapter.observe()["simulation_time"])
+                    logger.log(
+                        "mission_completed", simulation_time=adapter.observe()["simulation_time"]
+                    )
                     break
                 time.sleep(self.config.simulation.poll_interval_seconds)
             metrics = adapter.calculate_metrics()
@@ -172,6 +181,7 @@ class ExperimentOrchestrator:
             metrics=metrics,
             fitness=fitness,
             failure=failure,
+            capabilities=self.capabilities,
         )
         adapter.export_replay(str(run_dir))
         run_result_document = {
